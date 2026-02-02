@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <script>
+    // STRICT SES/Lockdown warning suppression (Must run first)
+    (function () {
+      // Aggressive Filter for SES/Lockdown/Intrinsics
+      const isSesWarning = (args) => {
+        try {
+          const msg = args.map(a => {
+            if (typeof a === 'string') return a;
+            if (a instanceof Error) return a.message;
+            if (typeof a === 'object') return JSON.stringify(a);
+            return String(a);
+          }).join(' ');
+          return (
+            msg.includes('SES') ||
+            msg.includes('lockdown') ||
+            msg.includes('intrinsics') ||
+            msg.includes('unpermitted intrinsics') ||
+            msg.includes('getOrInsert')
+          );
+        } catch (e) { return false; }
+      };
+
+      const originalWarn = console.warn;
+      const originalError = console.error;
+      const originalGroup = console.group;
+      const originalGroupCollapsed = console.groupCollapsed;
+
+      console.warn = function (...args) { if (!isSesWarning(args)) originalWarn.apply(console, args); };
+      console.error = function (...args) { if (!isSesWarning(args)) originalError.apply(console, args); };
+
+      // Also suppress groups if they look suspicious (though harder to filter content *inside* without buffering)
+      // For now, checks the group title
+      console.group = function (...args) { if (!isSesWarning(args)) originalGroup.apply(console, args); };
+      console.groupCollapsed = function (...args) { if (!isSesWarning(args)) originalGroupCollapsed.apply(console, args); };
+
+      // Global Error Handler for uncaught exceptions
+      window.addEventListener('error', function (event) {
+        if (event.message && (event.message.includes('SES') || event.message.includes('lockdown'))) {
+          event.stopImmediatePropagation();
+          event.preventDefault();
+        }
+      }, true);
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="src\assets\player-right.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>guardian-cell</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
+</html>

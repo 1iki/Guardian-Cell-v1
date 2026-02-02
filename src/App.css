@@ -1,0 +1,7 @@
+/* Cleaned up App.css for Game */
+/* Styles moved to index.css for consistency */
+
+/* Ensure UI elements can be clicked */
+.ui-layer {
+  pointer-events: auto;
+}
